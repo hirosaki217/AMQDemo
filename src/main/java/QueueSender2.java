@@ -18,8 +18,7 @@ import org.apache.log4j.BasicConfigurator;
 
 import com.google.gson.Gson;
 
-import data.Person;
-import helper.XMLConvert;
+import data.User;
 
 public class QueueSender2 {
 	public static void main(String[] args) throws Exception {
@@ -55,43 +54,43 @@ public class QueueSender2 {
 //		producer.send(obj);
 //		Person p = new Person(1001, "Thân Thị Đẹt", new Date());
 //		
-//		Gson gson = new Gson();
+		Gson gson = new Gson();
 //		
 //		msg = session.createTextMessage(gson.toJson(p));
 //		producer.send(msg);
-		
-		
-		//Cho receiver lắng nghe trên queue, chừng có message thì notify - async
-				System.out.println("Hung was listened on queue...");
-				receiver.setMessageListener(new MessageListener() {
-					
-		//có message đến queue, phương thức này được thực thi
-					public void onMessage(Message msg) {// msg là message nhận được
-						try {
-							if (msg instanceof TextMessage) {
-								TextMessage tm = (TextMessage) msg;
-								String txt = tm.getText();
-								System.out.println("Nhận được " + txt);
-								msg.acknowledge();// gửi tín hiệu ack
-							} else if (msg instanceof ObjectMessage) {
-								ObjectMessage om = (ObjectMessage) msg;
-								System.out.println(om);
-							}
-		//others message type....
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+		User user = new User("Hung", null);
+		// Cho receiver lắng nghe trên queue, chừng có message thì notify - async
+		System.out.println(user.getName()+" was listened on queue...");
+		receiver.setMessageListener(new MessageListener() {
+
+			// có message đến queue, phương thức này được thực thi
+			public void onMessage(Message msg) {// msg là message nhận được
+				try {
+					if (msg instanceof TextMessage) {
+						TextMessage tm = (TextMessage) msg;
+						String txt = tm.getText();
+						System.out.println("Nhận được " + txt);
+						msg.acknowledge();// gửi tín hiệu ack
+					} else if (msg instanceof ObjectMessage) {
+						ObjectMessage om = (ObjectMessage) msg;
+
+						User user = gson.fromJson(om.getObject().toString(), User.class);
+
+						System.out.println(user.getName() + ": " + user.getMessage());
 					}
-				});
-			
-		
+					// others message type....
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
 		String m = "";
 		Scanner sc = new Scanner(System.in);
 		while (m != "x") {
-			System.out.print("Nhap noi dung can gui ");
-			System.out.println("nhap x de thoat:  ");
 			m = sc.nextLine();
-			Message obj1 = session.createTextMessage(m);
+			user.setMessage(m);
+			Message obj1 = session.createObjectMessage(gson.toJson(user));
 			producer.send(obj1);
 		}
 
